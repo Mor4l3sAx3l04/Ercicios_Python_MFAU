@@ -12,12 +12,10 @@ TEXT_DIM = "#7B7F9E"
 ENTRY_BG = "#2A2D45"
 BORDER   = "#3A3D5C"
 
-
 def apply_styles(root):
     style = ttk.Style(root)
     style.theme_use("clam")
     style.configure("TScrollbar", background=CARD, troughcolor=BG, bordercolor=BG, arrowcolor=TEXT_DIM)
-
 
 def make_entry(parent, placeholder="", **kwargs):
     e = tk.Entry(parent, bg=ENTRY_BG, fg=TEXT, insertbackground=TEXT,
@@ -39,7 +37,6 @@ def make_entry(parent, placeholder="", **kwargs):
         e.bind("<FocusOut>", on_focus_out)
     return e
 
-
 def make_button(parent, text, command, color=ACCENT, small=False):
     sz = 10 if small else 11
     btn = tk.Button(parent, text=text, command=command,
@@ -53,7 +50,6 @@ def make_button(parent, text, command, color=ACCENT, small=False):
     btn.bind("<Leave>", on_leave)
     return btn
 
-
 def make_textbox(parent, h=8):
     frame = tk.Frame(parent, bg=BORDER)
     frame.pack(fill="x", padx=20, pady=(0, 16))
@@ -66,28 +62,23 @@ def make_textbox(parent, h=8):
     sb.pack(side="right", fill="y")
     return txt
 
-
 def append_text(txt_widget, msg):
     txt_widget.config(state="normal")
     txt_widget.insert("end", msg + "\n")
     txt_widget.see("end")
     txt_widget.config(state="disabled")
 
-
 def clear_text(txt_widget):
     txt_widget.config(state="normal")
     txt_widget.delete("1.0", "end")
     txt_widget.config(state="disabled")
 
-
 def section_label(parent, text):
     tk.Label(parent, text=text, bg=CARD, fg=TEXT_DIM,
             font=("Helvetica", 9, "bold")).pack(anchor="w", padx=20, pady=(12, 2))
 
-
 def divider(parent):
     tk.Frame(parent, bg=BORDER, height=1).pack(fill="x", padx=20, pady=8)
-
 
 def open_exercise(parent, title, build_fn):
     win = tk.Toplevel(parent)
@@ -121,7 +112,6 @@ def open_exercise(parent, title, build_fn):
 
     build_fn(inner)
     win.grab_set()
-
 
 # ── EJERCICIO 1 ── Sistema de aumento de sueldos ─────────────────────────────
 def build_ej1(frame):
@@ -176,7 +166,6 @@ def build_ej1(frame):
     divider(card)
     section_label(card, "RESULTADO")
     txt = make_textbox(card)
-
 
 # ── EJERCICIO 2 ── Parque de diversiones ─────────────────────────────────────
 def build_ej2(frame):
@@ -236,7 +225,6 @@ def build_ej2(frame):
     divider(card)
     section_label(card, "RESULTADO")
     txt = make_textbox(card)
-
 
 # ── EJERCICIO 3 ── Descuentos por mes ────────────────────────────────────────
 def build_ej3(frame):
@@ -301,7 +289,6 @@ def build_ej3(frame):
     section_label(card, "RESULTADO")
     txt = make_textbox(card)
 
-
 # ── EJERCICIO 4 ── Validar numero < 10 ───────────────────────────────────────
 def build_ej4(frame):
     intentos = [0]
@@ -331,7 +318,6 @@ def build_ej4(frame):
     divider(card)
     section_label(card, "LOG DE INTENTOS")
     txt = make_textbox(card, h=10)
-
 
 # ── EJERCICIO 5 ── Validar rango (0, 20) ─────────────────────────────────────
 def build_ej5(frame):
@@ -365,7 +351,6 @@ def build_ej5(frame):
     divider(card)
     section_label(card, "LOG DE INTENTOS")
     txt = make_textbox(card, h=10)
-
 
 # ── EJERCICIO 6 ── Registro de intentos ──────────────────────────────────────
 def build_ej6(frame):
@@ -414,7 +399,6 @@ def build_ej6(frame):
     section_label(card, "LOG")
     txt = make_textbox(card, h=10)
 
-
 # ── EJERCICIO 7 ── Suma de primeros N numeros ─────────────────────────────────
 def build_ej7(frame):
     def calcular():
@@ -444,7 +428,6 @@ def build_ej7(frame):
     divider(card)
     section_label(card, "RESULTADO")
     txt = make_textbox(card, h=10)
-
 
 # ── EJERCICIO 8 ── Suma acumulativa ──────────────────────────────────────────
 def build_ej8(frame):
@@ -493,7 +476,6 @@ def build_ej8(frame):
     txt = make_textbox(card, h=10)
     append_text(txt, "Ingresa numeros (0 para finalizar):")
 
-
 # ── EJERCICIO 9 ── Suma hasta superar limite ─────────────────────────────────
 def build_ej9(frame):
     numeros   = []
@@ -538,7 +520,6 @@ def build_ej9(frame):
     section_label(card, "SUMAS PARCIALES")
     txt = make_textbox(card, h=10)
     append_text(txt, f"Ingresa numeros (se detiene al superar {LIMITE}):")
-
 
 # ── EJERCICIO 10 ── Pago de trabajadores ─────────────────────────────────────
 def build_ej10(frame):
@@ -604,7 +585,6 @@ def build_ej10(frame):
     section_label(card, "RESULTADO")
     txt = make_textbox(card)
 
-
 # ── MENU PRINCIPAL ────────────────────────────────────────────────────────────
 EJERCICIOS = [
     ("01", "Aumento de Sueldos",    build_ej1),
@@ -618,7 +598,6 @@ EJERCICIOS = [
     ("09", "Suma hasta Limite 100", build_ej9),
     ("10", "Pago de Trabajadores",  build_ej10),
 ]
-
 
 def main():
     root = tk.Tk()
@@ -683,7 +662,6 @@ def main():
         make_button(card, "Abrir", make_cmd(), small=True).pack(anchor="w")
 
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()
