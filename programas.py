@@ -610,19 +610,14 @@ def main():
     # Header
     hdr = tk.Frame(root, bg=ACCENT, pady=24)
     hdr.pack(fill="x")
-    tk.Label(hdr, text="Ejercicios de Programacion",
+    tk.Label(hdr, text="Ejercicios de Programación",
             bg=ACCENT, fg="white", font=("Helvetica", 18, "bold")).pack()
-    tk.Label(hdr, text="Interfaz grafica con Python & Tkinter",
+    tk.Label(hdr, text="Introducción a la Inteligencia Artificial, Alma Erika, Morales Flores Axel Uriel, 6IV8",
             bg=ACCENT, fg="#D0CCFF", font=("Helvetica", 10)).pack(pady=(4, 0))
 
     tk.Label(root, text="Selecciona un ejercicio para comenzar",
             bg=BG, fg=TEXT_DIM, font=("Helvetica", 11)).pack(pady=(16, 4))
-
-    # Footer
-    tk.Frame(root, bg=BORDER, height=1).pack(fill="x", pady=(12, 0))
-    tk.Label(root, text="Python  -  Tkinter  -  2025",
-            bg=BG, fg=TEXT_DIM, font=("Helvetica", 9)).pack(pady=8)
-
+    
     # Grid de tarjetas
     grid = tk.Frame(root, bg=BG)
     grid.pack(padx=24, pady=8, fill="both")
