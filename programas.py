@@ -12,16 +12,18 @@ TEXT_DIM = "#7B7F9E"
 ENTRY_BG = "#2A2D45"
 BORDER   = "#3A3D5C"
 
+
 def apply_styles(root):
     style = ttk.Style(root)
     style.theme_use("clam")
     style.configure("TScrollbar", background=CARD, troughcolor=BG, bordercolor=BG, arrowcolor=TEXT_DIM)
 
+
 def make_entry(parent, placeholder="", **kwargs):
     e = tk.Entry(parent, bg=ENTRY_BG, fg=TEXT, insertbackground=TEXT,
                 relief="flat", font=("Helvetica", 11),
                 highlightthickness=1, highlightbackground=BORDER,
-                highlightcolor=ACCENT, **kwargs)
+                 highlightcolor=ACCENT, **kwargs)
     if placeholder:
         e.insert(0, placeholder)
         e.config(fg=TEXT_DIM)
@@ -37,6 +39,7 @@ def make_entry(parent, placeholder="", **kwargs):
         e.bind("<FocusOut>", on_focus_out)
     return e
 
+
 def make_button(parent, text, command, color=ACCENT, small=False):
     sz = 10 if small else 11
     btn = tk.Button(parent, text=text, command=command,
@@ -50,6 +53,7 @@ def make_button(parent, text, command, color=ACCENT, small=False):
     btn.bind("<Leave>", on_leave)
     return btn
 
+
 def make_textbox(parent, h=8):
     frame = tk.Frame(parent, bg=BORDER)
     frame.pack(fill="x", padx=20, pady=(0, 16))
@@ -62,16 +66,12 @@ def make_textbox(parent, h=8):
     sb.pack(side="right", fill="y")
     return txt
 
-def append_text(txt_widget, msg):
-    txt_widget.config(state="normal")
-    txt_widget.insert("end", msg + "\n")
-    txt_widget.see("end")
-    txt_widget.config(state="disabled")
 
-def clear_text(txt_widget):
-    txt_widget.config(state="normal")
-    txt_widget.delete("1.0", "end")
-    txt_widget.config(state="disabled")
+def append_text(w, msg):
+    w.config(state="normal"); w.insert("end", msg + "\n"); w.see("end"); w.config(state="disabled")
+
+def clear_text(w):
+    w.config(state="normal"); w.delete("1.0", "end"); w.config(state="disabled")
 
 def section_label(parent, text):
     tk.Label(parent, text=text, bg=CARD, fg=TEXT_DIM,
@@ -80,40 +80,128 @@ def section_label(parent, text):
 def divider(parent):
     tk.Frame(parent, bg=BORDER, height=1).pack(fill="x", padx=20, pady=8)
 
-def open_exercise(parent, title, build_fn):
-    win = tk.Toplevel(parent)
-    win.title(title)
-    win.configure(bg=BG)
-    win.geometry("620x640")
-    win.resizable(True, True)
 
-    hdr = tk.Frame(win, bg=ACCENT, pady=14)
-    hdr.pack(fill="x")
-    tk.Label(hdr, text=title, bg=ACCENT, fg="white",
-            font=("Helvetica", 15, "bold")).pack()
+#   NAVEGACION CENTRAL                             
+class App:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Ejercicios de Programacion - Morales Flores Axel Uriel - 6IV8")
+        self.root.configure(bg=BG)
+        self.root.geometry("600x720")
+        self.root.resizable(False, False)
+        apply_styles(root)
 
-    canvas = tk.Canvas(win, bg=BG, highlightthickness=0)
-    sb = tk.Scrollbar(win, orient="vertical", command=canvas.yview)
-    canvas.configure(yscrollcommand=sb.set)
-    sb.pack(side="right", fill="y")
-    canvas.pack(side="left", fill="both", expand=True)
+        # Barra superior fija
+        self.topbar = tk.Frame(root, bg=ACCENT, pady=0)
+        self.topbar.pack(fill="x")
 
-    inner = tk.Frame(canvas, bg=BG)
-    cwin = canvas.create_window((0, 0), window=inner, anchor="nw")
+        self.lbl_titulo = tk.Label(self.topbar, text="Ejercicios de Programacion",
+                                bg=ACCENT, fg="white", font=("Helvetica", 15, "bold"), pady=14)
+        self.lbl_titulo.pack(side="left", padx=16)
 
-    def on_resize(e): canvas.itemconfig(cwin, width=e.width)
-    canvas.bind("<Configure>", on_resize)
+        # Botones de navegacion (derecha del header)
+        self.btn_salir = tk.Button(self.topbar, text="Salir", command=self.confirmar_salir,
+                                bg=ACCENT2, fg=TEXT, relief="flat", font=("Helvetica", 9, "bold"),
+                                cursor="hand2", padx=12, pady=6, borderwidth=0)
+        self.btn_salir.pack(side="right", padx=8, pady=8)
 
-    def on_frame(e): canvas.configure(scrollregion=canvas.bbox("all"))
-    inner.bind("<Configure>", on_frame)
+        self.btn_menu = tk.Button(self.topbar, text="< Menu", command=self.mostrar_menu,
+                                bg=CARD2, fg=TEXT, relief="flat", font=("Helvetica", 9, "bold"),
+                                cursor="hand2", padx=12, pady=6, borderwidth=0)
+        self.btn_menu.pack(side="right", padx=(0, 4), pady=8)
+        self.btn_menu.pack_forget()  # oculto al inicio
 
-    def on_mousewheel(e): canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
-    canvas.bind_all("<MouseWheel>", on_mousewheel)
+        # Contenedor principal intercambiable
+        self.contenedor = tk.Frame(root, bg=BG)
+        self.contenedor.pack(fill="both", expand=True)
 
-    build_fn(inner)
-    win.grab_set()
+        # Footer fijo
+        tk.Frame(root, bg=BORDER, height=1).pack(fill="x")
+        tk.Label(root, text="Introduccion a la IA  -  Morales Flores Axel Uriel  -  6IV8",
+                bg=BG, fg=TEXT_DIM, font=("Helvetica", 8)).pack(pady=5)
 
-# ── EJERCICIO 1 ── Sistema de aumento de sueldos ─────────────────────────────
+        self.mostrar_menu()
+
+    def limpiar_contenedor(self):
+        for w in self.contenedor.winfo_children():
+            w.destroy()
+
+    def confirmar_salir(self):
+        if messagebox.askyesno("Salir", "Seguro que deseas salir del programa?"):
+            self.root.destroy()
+
+    def mostrar_menu(self):
+        self.lbl_titulo.config(text="Ejercicios de Programacion")
+        self.btn_menu.pack_forget()
+        self.limpiar_contenedor()
+
+        tk.Label(self.contenedor, text="Selecciona un ejercicio para comenzar",
+                bg=BG, fg=TEXT_DIM, font=("Helvetica", 11)).pack(pady=(14, 6))
+
+        # Canvas con scroll para las tarjetas
+        canvas = tk.Canvas(self.contenedor, bg=BG, highlightthickness=0)
+        sb = tk.Scrollbar(self.contenedor, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        grid = tk.Frame(canvas, bg=BG)
+        cwin = canvas.create_window((0, 0), window=grid, anchor="nw")
+
+        def on_resize(e): canvas.itemconfig(cwin, width=e.width)
+        canvas.bind("<Configure>", on_resize)
+
+        def on_frame(e): canvas.configure(scrollregion=canvas.bbox("all"))
+        grid.bind("<Configure>", on_frame)
+
+        def on_mousewheel(e): canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
+
+        for idx, (num, titulo, fn) in enumerate(EJERCICIOS):
+            row, col = divmod(idx, 2)
+            card = tk.Frame(grid, bg=CARD, padx=14, pady=14,
+                            highlightthickness=1, highlightbackground=BORDER)
+            card.grid(row=row, column=col, padx=8, pady=6, sticky="nsew")
+            grid.columnconfigure(col, weight=1)
+
+            tk.Label(card, text=f"#{num}", bg=CARD, fg=ACCENT,
+                    font=("Helvetica", 10, "bold")).pack(anchor="w")
+            tk.Label(card, text=titulo, bg=CARD, fg=TEXT,
+                    font=("Helvetica", 11, "bold"),
+                    wraplength=200, justify="left").pack(anchor="w", pady=(4, 8))
+
+            def make_cmd(f=fn, t=titulo):
+                return lambda: self.abrir_ejercicio(t, f)
+            make_button(card, "Abrir", make_cmd(), small=True).pack(anchor="w")
+
+    def abrir_ejercicio(self, titulo, build_fn):
+        self.lbl_titulo.config(text=titulo)
+        self.btn_menu.pack(side="right", padx=(0, 4), pady=8)
+        self.limpiar_contenedor()
+
+        # Canvas scrollable para el ejercicio
+        canvas = tk.Canvas(self.contenedor, bg=BG, highlightthickness=0)
+        sb = tk.Scrollbar(self.contenedor, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        inner = tk.Frame(canvas, bg=BG)
+        cwin = canvas.create_window((0, 0), window=inner, anchor="nw")
+
+        def on_resize(e): canvas.itemconfig(cwin, width=e.width)
+        canvas.bind("<Configure>", on_resize)
+
+        def on_frame(e): canvas.configure(scrollregion=canvas.bbox("all"))
+        inner.bind("<Configure>", on_frame)
+
+        def on_mousewheel(e): canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
+        canvas.bind_all("<MouseWheel>", on_mousewheel)
+
+        build_fn(inner)
+
+
+#   EJERCICIO 1
 def build_ej1(frame):
     historial = []
 
@@ -131,12 +219,10 @@ def build_ej1(frame):
             if sueldo <= 0: raise ValueError
         except ValueError:
             messagebox.showerror("Error", "Sueldo invalido.", parent=frame.winfo_toplevel()); return
-
         aumento = calcular_aumento(sueldo)
         nuevo   = sueldo + aumento
         pct     = (aumento / sueldo) * 100
         historial.append((nombre, sueldo, aumento, nuevo))
-
         clear_text(txt)
         append_text(txt, "Trabajador registrado")
         append_text(txt, f"Nombre   : {nombre}")
@@ -167,7 +253,8 @@ def build_ej1(frame):
     section_label(card, "RESULTADO")
     txt = make_textbox(card)
 
-# ── EJERCICIO 2 ── Parque de diversiones ─────────────────────────────────────
+
+#   EJERCICIO 2  
 def build_ej2(frame):
     visitantes = []
 
@@ -186,13 +273,11 @@ def build_ej2(frame):
             if edad <= 0 or juegos < 0: raise ValueError
         except ValueError:
             messagebox.showerror("Error", "Datos invalidos.", parent=frame.winfo_toplevel()); return
-
         total_base = juegos * 50
         pct_desc   = calcular_descuento(edad)
         descuento  = total_base * pct_desc
         total_pago = total_base - descuento
         visitantes.append((nombre, edad, juegos, total_pago))
-
         clear_text(txt)
         append_text(txt, "Visitante registrado")
         append_text(txt, f"Nombre   : {nombre}  |  Edad: {edad} anios")
@@ -226,15 +311,15 @@ def build_ej2(frame):
     section_label(card, "RESULTADO")
     txt = make_textbox(card)
 
-# ── EJERCICIO 3 ── Descuentos por mes ────────────────────────────────────────
+
+#   EJERCICIO 3  
 def build_ej3(frame):
     compras = []
     MESES = {"enero":1,"febrero":2,"marzo":3,"abril":4,"mayo":5,"junio":6,
             "julio":7,"agosto":8,"septiembre":9,"octubre":10,"noviembre":11,"diciembre":12}
     DESCUENTOS = {10: 0.15, 12: 0.20, 7: 0.10}
 
-    def calcular_descuento(mes_num):
-        return DESCUENTOS.get(mes_num, 0.0)
+    def calcular_descuento(mes_num): return DESCUENTOS.get(mes_num, 0.0)
 
     def registrar():
         nombre  = e_nombre.get().strip()
@@ -242,19 +327,17 @@ def build_ej3(frame):
         if nombre in ("", "Nombre del cliente"):
             messagebox.showwarning("Falta dato", "Ingresa el nombre.", parent=frame.winfo_toplevel()); return
         if mes_str not in MESES:
-            messagebox.showerror("Error", "Mes invalido. Escribe el nombre completo en espaniol.", parent=frame.winfo_toplevel()); return
+            messagebox.showerror("Error", "Mes invalido.", parent=frame.winfo_toplevel()); return
         try:
             importe = float(e_importe.get())
             if importe <= 0: raise ValueError
         except ValueError:
             messagebox.showerror("Error", "Importe invalido.", parent=frame.winfo_toplevel()); return
-
         mes_num = MESES[mes_str]
         pct     = calcular_descuento(mes_num)
         desc    = importe * pct
         total   = importe - desc
         compras.append((nombre, mes_str.capitalize(), importe, total))
-
         clear_text(txt)
         append_text(txt, "Compra registrada")
         append_text(txt, f"Cliente  : {nombre}")
@@ -289,7 +372,8 @@ def build_ej3(frame):
     section_label(card, "RESULTADO")
     txt = make_textbox(card)
 
-# ── EJERCICIO 4 ── Validar numero < 10 ───────────────────────────────────────
+
+#   EJERCICIO 4  
 def build_ej4(frame):
     intentos = [0]
 
@@ -306,7 +390,7 @@ def build_ej4(frame):
             append_text(txt, f"Intentos realizados: {intentos[0]}")
             intentos[0] = 0
         else:
-            append_text(txt, f"Intento {intentos[0]}: {n} no es menor que 10. Intenta de nuevo.")
+            append_text(txt, f"Intento {intentos[0]}: {n} no es menor que 10.")
         e_num.delete(0, "end")
 
     card = tk.Frame(frame, bg=CARD, pady=20); card.pack(fill="x", padx=20, pady=20)
@@ -319,7 +403,8 @@ def build_ej4(frame):
     section_label(card, "LOG DE INTENTOS")
     txt = make_textbox(card, h=10)
 
-# ── EJERCICIO 5 ── Validar rango (0, 20) ─────────────────────────────────────
+
+#   EJERCICIO 5  
 def build_ej5(frame):
     intentos = [0]
 
@@ -352,7 +437,8 @@ def build_ej5(frame):
     section_label(card, "LOG DE INTENTOS")
     txt = make_textbox(card, h=10)
 
-# ── EJERCICIO 6 ── Registro de intentos ──────────────────────────────────────
+
+#   EJERCICIO 6  
 def build_ej6(frame):
     historial_nums = []
     intentos_malos = [0]
@@ -399,7 +485,8 @@ def build_ej6(frame):
     section_label(card, "LOG")
     txt = make_textbox(card, h=10)
 
-# ── EJERCICIO 7 ── Suma de primeros N numeros ─────────────────────────────────
+
+#   EJERCICIO 7  
 def build_ej7(frame):
     def calcular():
         try:
@@ -429,7 +516,8 @@ def build_ej7(frame):
     section_label(card, "RESULTADO")
     txt = make_textbox(card, h=10)
 
-# ── EJERCICIO 8 ── Suma acumulativa ──────────────────────────────────────────
+
+#   EJERCICIO 8  
 def build_ej8(frame):
     numeros   = []
     suma_acum = [0]
@@ -476,7 +564,8 @@ def build_ej8(frame):
     txt = make_textbox(card, h=10)
     append_text(txt, "Ingresa numeros (0 para finalizar):")
 
-# ── EJERCICIO 9 ── Suma hasta superar limite ─────────────────────────────────
+
+#   EJERCICIO 9  
 def build_ej9(frame):
     numeros   = []
     suma_acum = [0]
@@ -521,7 +610,8 @@ def build_ej9(frame):
     txt = make_textbox(card, h=10)
     append_text(txt, f"Ingresa numeros (se detiene al superar {LIMITE}):")
 
-# ── EJERCICIO 10 ── Pago de trabajadores ─────────────────────────────────────
+
+#   EJERCICIO 10                                
 def build_ej10(frame):
     trabajadores = []
 
@@ -543,10 +633,8 @@ def build_ej10(frame):
             if h_norm < 0 or pago_h <= 0 or h_extra < 0 or hijos < 0: raise ValueError
         except ValueError:
             messagebox.showerror("Error", "Valores numericos invalidos.", parent=frame.winfo_toplevel()); return
-
         p_n, p_e, bon, total = calcular_pago(h_norm, pago_h, h_extra, hijos)
         trabajadores.append((nombre, h_norm, pago_h, h_extra, hijos, total))
-
         clear_text(txt)
         append_text(txt, f"Trabajador: {nombre}")
         append_text(txt, "-" * 40)
@@ -585,7 +673,8 @@ def build_ej10(frame):
     section_label(card, "RESULTADO")
     txt = make_textbox(card)
 
-# ── MENU PRINCIPAL ────────────────────────────────────────────────────────────
+
+#   LISTA DE EJERCICIOS
 EJERCICIOS = [
     ("01", "Aumento de Sueldos",    build_ej1),
     ("02", "Parque de Diversiones", build_ej2),
@@ -599,64 +688,71 @@ EJERCICIOS = [
     ("10", "Pago de Trabajadores",  build_ej10),
 ]
 
-def main():
-    root = tk.Tk()
-    root.title("Ejercicios de Programacion")
-    root.configure(bg=BG)
-    root.geometry("520x680")
-    root.resizable(False, False)
-    apply_styles(root)
 
-    # Header
-    hdr = tk.Frame(root, bg=ACCENT, pady=24)
+#   LOGIN     
+def mostrar_login():
+    USUARIO   = "admin"
+    CONTRASENA = "1234"
+
+    login_win = tk.Tk()
+    login_win.title("Iniciar sesion - Morales Flores Axel Uriel - 6IV8")
+    login_win.configure(bg=BG)
+    login_win.geometry("400x480")
+    login_win.resizable(False, False)
+
+    hdr = tk.Frame(login_win, bg=ACCENT, pady=30)
     hdr.pack(fill="x")
-    tk.Label(hdr, text="Ejercicios de Programación",
-            bg=ACCENT, fg="white", font=("Helvetica", 18, "bold")).pack()
-    tk.Label(hdr, text="Introducción a la Inteligencia Artificial, Alma Erika, Morales Flores Axel Uriel, 6IV8",
+    tk.Label(hdr, text="Bienvenido", bg=ACCENT, fg="white",
+            font=("Helvetica", 22, "bold")).pack()
+    tk.Label(hdr, text="Ingresa tus credenciales para continuar",
             bg=ACCENT, fg="#D0CCFF", font=("Helvetica", 10)).pack(pady=(4, 0))
 
-    tk.Label(root, text="Selecciona un ejercicio para comenzar",
-            bg=BG, fg=TEXT_DIM, font=("Helvetica", 11)).pack(pady=(16, 4))
-    
-    # Grid de tarjetas
-    grid = tk.Frame(root, bg=BG)
-    grid.pack(padx=24, pady=8, fill="both")
-    canvas = tk.Canvas(root, bg=BG, highlightthickness=0)
-    sb = tk.Scrollbar(root, orient="vertical", command=canvas.yview)
-    canvas.configure(yscrollcommand=sb.set)
-    sb.pack(side="right", fill="y")
-    canvas.pack(side="left", fill="both", expand=True)
+    body = tk.Frame(login_win, bg=BG)
+    body.pack(fill="both", expand=True, padx=40, pady=30)
 
-    grid = tk.Frame(canvas, bg=BG)
-    cwin = canvas.create_window((0, 0), window=grid, anchor="nw")
+    tk.Label(body, text="USUARIO", bg=BG, fg=TEXT_DIM,
+            font=("Helvetica", 9, "bold")).pack(anchor="w", pady=(0, 4))
+    e_user = make_entry(body, "Ingresa tu usuario")
+    e_user.pack(fill="x", pady=(0, 16))
 
-    def on_resize(e): canvas.itemconfig(cwin, width=e.width)
-    canvas.bind("<Configure>", on_resize)
+    tk.Label(body, text="CONTRASENA", bg=BG, fg=TEXT_DIM,
+            font=("Helvetica", 9, "bold")).pack(anchor="w", pady=(0, 4))
+    e_pass = make_entry(body, "Ingresa tu contrasena", show="")
+    e_pass.pack(fill="x", pady=(0, 4))
 
-    def on_frame(e): canvas.configure(scrollregion=canvas.bbox("all"))
-    grid.bind("<Configure>", on_frame)
+    mostrar = [False]
+    def toggle_pass():
+        mostrar[0] = not mostrar[0]
+        e_pass.config(show="" if mostrar[0] else "*")
+        btn_toggle.config(text="Ocultar" if mostrar[0] else "Mostrar")
+    btn_toggle = tk.Button(body, text="Mostrar", command=toggle_pass,
+                        bg=BG, fg=TEXT_DIM, relief="flat",
+                        font=("Helvetica", 9), cursor="hand2", bd=0)
+    btn_toggle.pack(anchor="e", pady=(0, 20))
 
-    def on_mousewheel(e): canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
-    canvas.bind_all("<MouseWheel>", on_mousewheel)
+    lbl_error = tk.Label(body, text="", bg=BG, fg=ACCENT2, font=("Helvetica", 10))
+    lbl_error.pack()
 
-    for idx, (num, titulo, fn) in enumerate(EJERCICIOS):
-        row, col = divmod(idx, 2)
-        card = tk.Frame(grid, bg=CARD, padx=14, pady=14,
-                        highlightthickness=1, highlightbackground=BORDER)
-        card.grid(row=row, column=col, padx=6, pady=6, sticky="nsew")
-        grid.columnconfigure(col, weight=1)
+    def intentar_login(event=None):
+        user = e_user.get().strip()
+        pwd  = e_pass.get().strip()
+        if user in ("", "Ingresa tu usuario") or pwd in ("", "Ingresa tu contrasena"):
+            lbl_error.config(text="Completa todos los campos."); return
+        if user == USUARIO and pwd == CONTRASENA:
+            login_win.destroy()
+            root = tk.Tk()
+            App(root)
+            root.mainloop()
+        else:
+            lbl_error.config(text="Usuario o contrasena incorrectos.")
+            e_pass.delete(0, "end"); e_pass.insert(0, "Ingresa tu contrasena"); e_pass.config(fg=TEXT_DIM)
 
-        tk.Label(card, text=f"#{num}", bg=CARD, fg=ACCENT,
-                font=("Helvetica", 10, "bold")).pack(anchor="w")
-        tk.Label(card, text=titulo, bg=CARD, fg=TEXT,
-                font=("Helvetica", 11, "bold"),
-                wraplength=180, justify="left").pack(anchor="w", pady=(4, 8))
+    make_button(body, "Ingresar", intentar_login).pack(fill="x", pady=(8, 0))
+    e_pass.bind("<Return>", intentar_login)
+    e_user.bind("<Return>", intentar_login)
 
-        def make_cmd(f=fn, t=titulo):
-            return lambda: open_exercise(root, t, f)
-        make_button(card, "Abrir", make_cmd(), small=True).pack(anchor="w")
+    login_win.mainloop()
 
-    root.mainloop()
 
 if __name__ == "__main__":
-    main()
+    mostrar_login()
